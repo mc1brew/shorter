@@ -20,7 +20,7 @@ namespace Kvin.Shorter
             [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
             ILogger log)
         {
-            log.LogInformation("C# HTTP trigger function processed a request.");
+            log.LogInformation("Get Url function initiated.");
             string name = req.Query["name"];
             
             var db = new MongoStuff();
@@ -30,27 +30,8 @@ namespace Kvin.Shorter
             var document = collection.Find(filter).FirstOrDefault();
 
             if(document == null || document["Url"] == null)
-                return  new RedirectResult("http://www.k.vin");
+                return  new RedirectResult(System.Environment.GetEnvironmentVariable(Constants.ConfigKeys.AddUrlPage, EnvironmentVariableTarget.Process));
             return new RedirectResult(document["Url"].ToString());
         }
-    }
-
-    public class MongoStuff
-    {
-        private readonly string _connectionString;
-        private readonly string _databaseName = "short";
-        private readonly MongoClient _mongoClient;
-        private readonly IMongoDatabase _mongoDatabase;
-        public MongoStuff()
-        {
-            _connectionString = System.Environment.GetEnvironmentVariable("MongoConnectionString", EnvironmentVariableTarget.Process);
-            MongoClientSettings settings = MongoClientSettings.FromUrl(new MongoUrl(_connectionString));
-            settings.SslSettings = new SslSettings() {EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12};
-            this._mongoClient = new MongoClient(settings);
-            _mongoDatabase = _mongoClient.GetDatabase(_databaseName);
-
-        }
-
-        public IMongoDatabase Database {get { return _mongoDatabase;}}
     }
 }
