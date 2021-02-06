@@ -29,6 +29,9 @@ namespace Kvin.Shorter
             var filter = Builders<BsonDocument>.Filter.Eq("Name", name);
             var document = collection.Find(filter).FirstOrDefault();
 
+            if(document == null)
+                return new NotFoundResult();
+
             return new OkObjectResult(document["Url"].ToString());
         }
     }
