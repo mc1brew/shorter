@@ -29,9 +29,7 @@ namespace Kvin.Shorter
             var filter = Builders<BsonDocument>.Filter.Eq("Name", name);
             var document = collection.Find(filter).FirstOrDefault();
 
-            if(document == null || document["Url"] == null)
-                return  new RedirectResult(System.Environment.GetEnvironmentVariable(Constants.ConfigKeys.AddUrlPage, EnvironmentVariableTarget.Process));
-            return new RedirectResult(document["Url"].ToString());
+            return new OkObjectResult(document["Url"].ToString());
         }
     }
 }
