@@ -25,8 +25,8 @@ namespace Kvin.Shorter
 
                 string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
                 dynamic data = JsonConvert.DeserializeObject(requestBody);
-                string name = data?.name;
-                string url = data?.url;
+                string name = data?.Name;
+                string url = data?.Url;
 
                 if(string.IsNullOrEmpty(name))
                 {
