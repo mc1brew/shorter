@@ -60,7 +60,7 @@ namespace Kvin.Shorter
                     throw ex;
                 }
 
-                return new OkObjectResult(null);
+                return new OkResult();
             }
     }
 
