@@ -20,7 +20,7 @@ namespace Kvin.Shorter
             [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
             ILogger log)
         {
-            log.LogInformation("Get Url function initiated.");
+            log.LogInformation($"{nameof(GetLink)} function initiated.");
             string name = req.Query["name"];
             
             var db = new MongoStuff();
