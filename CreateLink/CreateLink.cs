@@ -22,25 +22,31 @@ namespace Kvin.Shorter
             ILogger log)
             {
                 log.LogInformation($"{nameof(CreateLink)} function initiated.");
-
                 string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-                dynamic data = JsonConvert.DeserializeObject(requestBody);
-                string name = data?.Name;
-                string url = data?.Url;
+                Link linkToBeCreated = JsonConvert.DeserializeObject<Link>(requestBody);
 
-                if(string.IsNullOrEmpty(name))
+                if(null == linkToBeCreated)
                 {
-                    log.LogError("Name was null.");
-                    throw new ArgumentNullException("Name was null.");
+                    string msg = $"The request body received: {requestBody} was unable to be deserialized into a {nameof(Link)} object.";
+                    log.LogWarning(msg);
+                    return new BadRequestObjectResult(msg);
                 }
 
-                if(string.IsNullOrEmpty(url))
+                if(string.IsNullOrEmpty(linkToBeCreated?.Key))
                 {
-                    log.LogError("Url was null.");
-                    throw new ArgumentNullException("Url was null.");
+                    string msg = $"{nameof(Link.Key)} was null.";
+                    log.LogWarning(msg);
+                    return new BadRequestObjectResult(msg);
                 }
 
-                log.LogInformation($"Creating link with Name: {name} and Url: {url}.");
+                if(string.IsNullOrEmpty(linkToBeCreated?.Url))
+                {
+                    string msg = $"{nameof(Link.Url)} was null.";
+                    log.LogWarning(msg);
+                    return new BadRequestObjectResult(msg);
+                }
+
+                log.LogInformation($"Creating {nameof(Link)} with {nameof(Link.Key)}: {linkToBeCreated?.Key} and {nameof(Link.Url)}: {linkToBeCreated?.Url}.");
 
                 try{
                     MongoStuff db = new MongoStuff();
@@ -48,8 +54,8 @@ namespace Kvin.Shorter
 
                     var document = new BsonDocument
                     {
-                        { "Name", name},
-                        { "Url", url}
+                        { $"{nameof(Link.Key)}", linkToBeCreated?.Key},
+                        { $"{nameof(Link.Url)}", linkToBeCreated?.Url}
                     };
 
                     collection.InsertOne(document);
