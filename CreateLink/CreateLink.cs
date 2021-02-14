@@ -24,49 +24,72 @@ namespace Kvin.Shorter
                 log.LogInformation($"{nameof(CreateLink)} function initiated.");
                 string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
                 Link linkToBeCreated = JsonConvert.DeserializeObject<Link>(requestBody);
-
-                if(null == linkToBeCreated)
-                {
-                    string msg = $"The request body received: {requestBody} was unable to be deserialized into a {nameof(Link)} object.";
-                    log.LogWarning(msg);
-                    return new BadRequestObjectResult(msg);
-                }
+                Response createLinkResponse = new Response();
 
                 if(string.IsNullOrEmpty(linkToBeCreated?.Key))
                 {
                     string msg = $"{nameof(Link.Key)} was null.";
                     log.LogWarning(msg);
-                    return new BadRequestObjectResult(msg);
+                    createLinkResponse.ErrorMessages.Add(msg);
                 }
 
-                if(string.IsNullOrEmpty(linkToBeCreated?.Url))
+                if(string.IsNullOrEmpty(linkToBeCreated?.TargetUrl))
                 {
-                    string msg = $"{nameof(Link.Url)} was null.";
+                    string msg = $"{nameof(Link.TargetUrl)} was null.";
                     log.LogWarning(msg);
-                    return new BadRequestObjectResult(msg);
+                    createLinkResponse.ErrorMessages.Add(msg);
                 }
-
-                log.LogInformation($"Creating {nameof(Link)} with {nameof(Link.Key)}: {linkToBeCreated?.Key} and {nameof(Link.Url)}: {linkToBeCreated?.Url}.");
-
-                try{
-                    MongoStuff db = new MongoStuff();
-                    var collection = db.Database.GetCollection<BsonDocument>("bar");
-
-                    var document = new BsonDocument
-                    {
-                        { $"{nameof(Link.Key)}", linkToBeCreated?.Key},
-                        { $"{nameof(Link.Url)}", linkToBeCreated?.Url}
-                    };
-
-                    collection.InsertOne(document);
-                }
-                catch(Exception ex)
+                
+                if(createLinkResponse.ErrorMessages.Count == 0)
                 {
-                    log.LogError(ex, ex.Message.ToString());
-                    throw ex;
+                    try{
+                        MongoStuff db = new MongoStuff();
+                        var collection = db.Database.GetCollection<BsonDocument>("bar");
+                        var filter = Builders<BsonDocument>.Filter.Eq($"{nameof(Link.Key)}", linkToBeCreated.Key);
+                        var document = collection.Find(filter).FirstOrDefault();
+                        //Todo: Learn how the exists function works.
+                        if(null != document)
+                        {
+                            string msg = $"{nameof(Link.Key)}: '{linkToBeCreated.Key}' already exists.";
+                            log.LogWarning(msg);
+                            createLinkResponse.ErrorMessages.Add(msg);
+                        }
+                    }
+                    catch(Exception ex)
+                    {
+                        log.LogError(ex, ex.Message.ToString());
+                        throw ex;
+                    }
                 }
 
-                return new OkResult();
+                if(createLinkResponse.ErrorMessages.Count == 0)
+                {
+                    log.LogInformation($"Creating {nameof(Link)} with {nameof(Link.Key)}: {linkToBeCreated?.Key} and {nameof(Link.TargetUrl)}: {linkToBeCreated?.TargetUrl}.");
+
+                    try{
+                        MongoStuff db = new MongoStuff();
+                        var collection = db.Database.GetCollection<BsonDocument>("bar");
+
+                        var document = new BsonDocument
+                        {
+                            { $"{nameof(Link.Key)}", linkToBeCreated?.Key},
+                            { $"{nameof(Link.TargetUrl)}", linkToBeCreated?.TargetUrl}
+                        };
+
+                        collection.InsertOne(document);
+                    }
+                    catch(Exception ex)
+                    {
+                        log.LogError(ex, ex.Message.ToString());
+                        throw ex;
+                    }
+                    
+                    createLinkResponse.Success = true;
+                    createLinkResponse.Payload = Newtonsoft.Json.JsonConvert.SerializeObject(linkToBeCreated);
+                    return new OkObjectResult(createLinkResponse);
+                }
+                createLinkResponse.Success = false;
+                return new BadRequestObjectResult(createLinkResponse);
             }
     }
 
