@@ -21,18 +21,20 @@ namespace Kvin.Shorter
             ILogger log)
         {
             log.LogInformation($"{nameof(GetLink)} function initiated.");
-            string name = req.Query["name"];
+            string key = req.Query[$"{nameof(Link.Key)}"];
             
             var db = new MongoStuff();
             var collection = db.Database.GetCollection<BsonDocument>("bar");
 
-            var filter = Builders<BsonDocument>.Filter.Eq("Name", name);
+            var filter = Builders<BsonDocument>.Filter.Eq($"{nameof(Link.Key)}", key);
             var document = collection.Find(filter).FirstOrDefault();
 
             if(document == null)
                 return new NotFoundResult();
 
-            return new OkObjectResult(document["Url"].ToString());
+            Link linkResult = new Link {TargetUrl = document[$"{nameof(Link.TargetUrl)}"].ToString()};
+
+            return new OkObjectResult(linkResult);
         }
     }
 }
